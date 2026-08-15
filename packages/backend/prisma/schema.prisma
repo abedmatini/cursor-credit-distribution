@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SendStatus {
+  NOT_SENT
+  SENDING
+  SENT
+  FAILED
+}
+
+enum VoucherStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+model Guest {
+  id          String     @id @default(cuid())
+  name        String
+  email       String     @unique
+  phone       String?
+  rsvpStatus  String?
+  source      String     @default("luma")
+  checkedInAt DateTime?
+  qrCodeUrl   String?
+
+  sendStatus  SendStatus @default(NOT_SENT)
+  lastSentAt  DateTime?
+  lastError   String?
+
+  voucher     Voucher?
+  sendLogs    SendLog[]
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([email])
+}
+
+model Voucher {
+  id            String        @id @default(cuid())
+  code          String        @unique
+  link          String?
+  status        VoucherStatus @default(AVAILABLE)
+  assignedEmail String?
+
+  guestId       String?       @unique
+  guest         Guest?        @relation(fields: [guestId], references: [id])
+
+  sendLogs      SendLog[]
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model SendLog {
+  id             String     @id @default(cuid())
+  guestId        String
+  guest          Guest      @relation(fields: [guestId], references: [id])
+  voucherId      String?
+  voucher        Voucher?   @relation(fields: [voucherId], references: [id])
+  status         SendStatus
+  brevoMessageId String?
+  error          String?
+  createdAt      DateTime   @default(now())
+}
