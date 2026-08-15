@@ -1,0 +1,30 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: cursor-credit-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: cursor
+      POSTGRES_PASSWORD: cursor_local_pw
+      POSTGRES_DB: cursor_credit
+    ports:
+      - "5433:5432"
+    volumes:
+      - cursor_credit_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cursor -d cursor_credit"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  adminer:
+    image: adminer:latest
+    container_name: cursor-credit-adminer
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+volumes:
+  cursor_credit_db_data:
